@@ -106,10 +106,11 @@ CollisionDetection :: proc(scene: ^Scene, position: ^[2]f32){
   player := scene.entities[scene.player_id].(Player)
   legs_offset:f32 = 4
   shadow_offset:f32 = 2
+  width_offset:f32 = 4
   player_rect := rl.Rectangle {
     x = position.x,
     y = position.y + player.sprite.dimension.y - legs_offset - shadow_offset,
-    width = player.sprite.dimension.x,
+    width = player.sprite.dimension.x - width_offset,
     height = legs_offset,
   }
 
