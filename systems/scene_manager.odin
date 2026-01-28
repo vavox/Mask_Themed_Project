@@ -70,6 +70,7 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
         movement_speed:f32 = 55
         e.velocity = rl.Vector2Normalize(movement_direction) * movement_speed
 
+        CollisionDetection(scene, &e.position)
         e.position += e.velocity*dt
         e.position = rl.Vector2Clamp(e.position, rl.Vector2{0,0}, rl.Vector2{f32(scene.width) - e.sprite.dimension.x, f32(scene.height) - e.sprite.dimension.y})
 
@@ -100,6 +101,65 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
     }
   }
 }
+
+CollisionDetection :: proc(scene: ^Scene, position: ^[2]f32){
+  player := scene.entities[scene.player_id].(Player)
+  legs_offset:f32 = 4
+  shadow_offset:f32 = 2
+  player_rect := rl.Rectangle {
+    x = position.x,
+    y = position.y + player.sprite.dimension.y - legs_offset - shadow_offset,
+    width = player.sprite.dimension.x,
+    height = legs_offset,
+  }
+
+  for &entity in scene.entities {
+    switch &e in entity{
+      case Player: { }
+      case Enemy: { }
+      case Tile: {
+        if !e.collision do continue
+        
+        tile_rect := rl.Rectangle {
+          x = f32(e.grid_x * 16),
+          y = f32(e.grid_y * 16),
+          width = e.sprite.dimension.x,
+          height = e.sprite.dimension.y,
+        }
+        
+        if rl.CheckCollisionRecs(player_rect, tile_rect) {
+          overlap_left := (player_rect.x + player_rect.width) - tile_rect.x
+          overlap_right := (tile_rect.x + tile_rect.width) - player_rect.x
+          overlap_top := (player_rect.y + player_rect.height) - tile_rect.y
+          overlap_bottom := (tile_rect.y + tile_rect.height) - player_rect.y
+          
+          resolve_x := min(overlap_left, overlap_right)
+          resolve_y := min(overlap_top, overlap_bottom)
+          
+          if resolve_x < resolve_y {  // horizontal collision
+            if overlap_left < overlap_right {
+              position.x = tile_rect.x - player_rect.width
+            }
+            else {
+              position.x = tile_rect.x + tile_rect.width
+            }
+          }
+          else { // vertical collision
+            if overlap_top < overlap_bottom {
+              position.y = tile_rect.y - tile_rect.height - player_rect.height
+            }
+            else {
+              position.y = tile_rect.y
+            }
+          }
+        }
+      }
+    }
+  }
+  
+}
+
+
 
 DrawScene :: proc(scene: Scene) {
   camera := rl.Camera2D{
