@@ -185,12 +185,6 @@ DrawScene :: proc(scene: Scene) {
           entity := scene.entities[entity_id]
           if tile, result := entity.(Tile); result {
             position := rl.Vector2{f32(16*tile.grid_x), f32(16*tile.grid_y)}
-            if tile.type == .Stone{
-                grass_draw_rect : rl.Rectangle
-                grass_draw_rect.x = f32(TileSpriteOffset[.Grass][0])
-                grass_draw_rect.y = f32(TileSpriteOffset[.Grass][1])
-                rl.DrawTextureRec(tile.sprite.texture, grass_draw_rect, position, rl.WHITE)
-            }
             rl.DrawTextureRec(tile.sprite.texture, tile.sprite.draw_rect, position, rl.WHITE)
           }
         }
