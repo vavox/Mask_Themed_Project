@@ -24,6 +24,52 @@ InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player
   width_offset:f32 = 4
   sprite_dimension := rl.Vector2{16, 22}
 
+  AddEntity(scene, Entity{
+    position = PositionFromGrid(scene, 12, 7),
+    collision = true,
+    collision_rect = rl.Rectangle {
+      x = 0,
+      y = 0,
+      width = 16,
+      height = 16,
+    },
+    kind_data = ButtonData {
+      sprite = StaticSprite {
+        texture = environment_texture,
+        dimension = rl.Vector2{16, 16},
+        draw_rect = rl.Rectangle {
+          x = 0,
+          y = 0,
+          width = 16,
+          height = 16
+        }
+      }
+    }
+  })
+
+  AddEntity(scene, Entity{
+    position = PositionFromGrid(scene, 14, 4),
+    collision = true,
+    collision_rect = rl.Rectangle {
+      x = 0,
+      y = 0,
+      width = 16,
+      height = 16,
+    },
+    kind_data = SpiritTrapData {
+      sprite = StaticSprite {
+        texture = environment_texture,
+        dimension = rl.Vector2{16, 16},
+        draw_rect = rl.Rectangle {
+          x = 0,
+          y = 0,
+          width = 16,
+          height = 16
+        }
+      }
+    }
+  })
+
   scene.player_id = AddPlayer(scene, Entity{
     position = rl.Vector2{100, 100},
     collision = true,
@@ -47,7 +93,13 @@ InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player
 
   AddEnemy(scene, Entity{
     position = {240, 20},
-    collision = false,
+    collision = true,
+    collision_rect = rl.Rectangle {
+      x = 0,
+      y = sprite_dimension.y - legs_offset - shadow_offset,
+      width = sprite_dimension.x - width_offset,
+      height = legs_offset,
+    },
     kind_data = EnemyData{
       sprite = Sprite {
         texture = npc_texture,
@@ -107,7 +159,7 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
       }
 
       case EnemyData: {
-        if scene.other_world {
+        if scene.other_world && !kind_data.trapped {
           player := scene.entities[scene.player_id]
           movement_speed:f32 = 55
           if player_data, result := player.kind_data.(PlayerData); result {
@@ -118,6 +170,11 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
       }
 
       case ButtonData: {
+        // --AlNov: @TODO If button updated before related object it will be not pressed even if Player stands on it 
+        kind_data.pressed = false
+      }
+
+      case SpiritTrapData: {
       }
 
       case TileData: {
@@ -183,6 +240,18 @@ SolvePlayerTileCollision :: proc(player, tile: ^Entity, penetration: rl.Vector2)
   player.position += penetration
 }
 
+SolvePlayerButtonCollision :: proc(player, button: ^Entity) {
+  if button_data, result := &button.kind_data.(ButtonData); result {
+    button_data.pressed = true
+  }
+}
+
+SolveSpiritTrapCollision :: proc(spirit, trap: ^Entity) {
+  if spirit_data, result := &spirit.kind_data.(EnemyData); result {
+    spirit_data.trapped = true
+  }
+}
+
 SolveCollision :: proc(scene: ^Scene) {
   for &collision, iter in scene.collisions {
     #partial switch &a_kind in collision.a.kind_data {
@@ -190,6 +259,34 @@ SolveCollision :: proc(scene: ^Scene) {
         #partial switch &b_kind in collision.b.kind_data {
           case TileData: {
             SolvePlayerTileCollision(collision.a, collision.b, collision.penetration)
+          }
+
+          case ButtonData: {
+            SolvePlayerButtonCollision(collision.a, collision.b)
+          }
+        }
+      }
+
+      case EnemyData: {
+        #partial switch &b_kind in collision.b.kind_data {
+          case SpiritTrapData: {
+            SolveSpiritTrapCollision(collision.a, collision.b)
+          }
+        }
+      }
+
+      case ButtonData: {
+        #partial switch &b_kind in collision.b.kind_data {
+          case PlayerData: {
+            SolvePlayerButtonCollision(collision.b, collision.a)
+          }
+        }
+      }
+
+      case SpiritTrapData: {
+        #partial switch &b_kind in collision.b.kind_data {
+          case EnemyData: {
+            SolveSpiritTrapCollision(collision.b, collision.a)
           }
         }
       }
@@ -258,6 +355,16 @@ DrawScene :: proc(scene: Scene) {
       }
 
       case ButtonData: {
+        if kind.pressed {
+          rl.DrawRectangleV(entity.position, kind.sprite.dimension, rl.VIOLET)
+        }
+        else {
+          rl.DrawRectangleV(entity.position, kind.sprite.dimension, rl.YELLOW)
+        }
+      }
+
+      case SpiritTrapData: {
+        rl.DrawRectangleV(entity.position, kind.sprite.dimension, rl.ORANGE)
       }
 
       case TileData: {
@@ -266,6 +373,12 @@ DrawScene :: proc(scene: Scene) {
   }
   
   rl.EndMode2D()
+}
+
+AddEntity :: proc(scene: ^Scene, entity: Entity) -> i32 {
+  id := i32(len(scene.entities))
+  append(&scene.entities, entity)
+  return id
 }
 
 AddPlayer :: proc(scene: ^Scene, player: Entity) -> i32 {

@@ -6,6 +6,7 @@ EntityKindData :: union {
   PlayerData,
   EnemyData,
   ButtonData,
+  SpiritTrapData,
   TileData,
 }
 
@@ -56,10 +57,16 @@ PlayerData :: struct {
 EnemyData :: struct {
   velocity: rl.Vector2,
   sprite: Sprite,
+  trapped: b32,
 }
 
 ButtonData :: struct {
-  toggle_entity: ^Entity,
+  sprite: StaticSprite,
+  pressed: b32,
+}
+
+SpiritTrapData :: struct {
+  sprite: StaticSprite,
 }
 
 TileData :: struct {
