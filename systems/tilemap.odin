@@ -48,6 +48,7 @@ LoadLevel :: proc(scene: ^Scene, level: Level, environment_texture: rl.Texture) 
       data_index += 1
       
       id := AddTile(scene, Entity{
+        position = PositionFromGrid(scene, x, y),
         kind_data = TileData{
           sprite = StaticSprite{
             texture = environment_texture,
@@ -74,8 +75,8 @@ LoadLevel :: proc(scene: ^Scene, level: Level, environment_texture: rl.Texture) 
         if tile_type == .Stone || tile_type == .Water {
           entity.collision = true
           entity.collision_rect = rl.Rectangle {
-            x = entity.position.x,
-            y = entity.position.y,
+            x = 0,
+            y = 0,
             width = tile.sprite.dimension.x,
             height = tile.sprite.dimension.y,
           }

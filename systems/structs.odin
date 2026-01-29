@@ -78,6 +78,7 @@ TileGrid :: struct {
 CollisionResult :: struct {
   a: ^Entity,
   b: ^Entity,
+  penetration: rl.Vector2
 }
 
 Scene :: struct {

@@ -62,6 +62,8 @@ InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player
 
 
 UpdateScene :: proc(scene: ^Scene, dt: f32) {
+  clear(&scene.collisions)
+
   for &entity in scene.entities {
     switch &kind_data in entity.kind_data {
       case PlayerData: {
@@ -87,9 +89,11 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
         movement_speed:f32 = 55
         kind_data.velocity = rl.Vector2Normalize(movement_direction) * movement_speed
 
-        CollisionDetection(scene)
         entity.position += kind_data.velocity*dt
         entity.position = rl.Vector2Clamp(entity.position, rl.Vector2{0,0}, rl.Vector2{f32(scene.width) - kind_data.sprite.dimension.x, f32(scene.height) - kind_data.sprite.dimension.y})
+
+        CollisionDetection(scene)
+        SolveCollision(scene)
 
         kind_data.sprite.offset = PlayerStateSpriteOffset[kind_data.state]
 
@@ -123,66 +127,81 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
 }
 
 CollisionDetection :: proc(scene: ^Scene){
-  player := &scene.entities[scene.player_id]
-  player_data := &player.kind_data.(PlayerData)
-  legs_offset:f32 = 4
-  shadow_offset:f32 = 2
-  width_offset:f32 = 4
-  player_rect := rl.Rectangle {
-    x = player.position.x,
-    y = player.position.y + player_data.sprite.dimension.y - legs_offset - shadow_offset,
-    width = player_data.sprite.dimension.x - width_offset,
-    height = legs_offset,
-  }
+  for a_iter := 0; a_iter < len(scene.entities) - 1; a_iter += 1 {
+    for b_iter := a_iter + 1; b_iter < len(scene.entities); b_iter += 1 {
+      a := &scene.entities[a_iter]
+      b := &scene.entities[b_iter]
 
-  for &entity in scene.entities {
-    switch &kind in entity.kind_data{
-      case PlayerData: { }
-      case EnemyData: { }
-      case ButtonData: { }
-      case TileData: {
-        if !entity.collision do continue
+      if (!a.collision || !b.collision) do continue
+
+      a_rect := a.collision_rect
+      a_rect.x += a.position.x
+      a_rect.y += a.position.y
+
+      b_rect := b.collision_rect
+      b_rect.x += b.position.x
+      b_rect.y += b.position.y
+      
+      if rl.CheckCollisionRecs(a_rect, b_rect) {
+        collision_result: CollisionResult
+
+        collision_result.a = a
+        collision_result.b = b
+
+        overlap_left := (a_rect.x + a_rect.width) - b_rect.x
+        overlap_right := (b_rect.x + b_rect.width) - a_rect.x
+        overlap_top := (a_rect.y + a_rect.height) - b_rect.y
+        overlap_bottom := (b_rect.y + b_rect.height) - a_rect.y
         
-        tile_rect := rl.Rectangle {
-          x = f32(kind.grid_x * 16),
-          y = f32(kind.grid_y * 16),
-          width = kind.sprite.dimension.x,
-          height = kind.sprite.dimension.y,
-        }
-        
-        if rl.CheckCollisionRecs(player_rect, tile_rect) {
-          overlap_left := (player_rect.x + player_rect.width) - tile_rect.x
-          overlap_right := (tile_rect.x + tile_rect.width) - player_rect.x
-          overlap_top := (player_rect.y + player_rect.height) - tile_rect.y
-          overlap_bottom := (tile_rect.y + tile_rect.height) - player_rect.y
-          
-          resolve_x := min(overlap_left, overlap_right)
-          resolve_y := min(overlap_top, overlap_bottom)
-          
-          if resolve_x < resolve_y {  // horizontal collision
-            if overlap_left < overlap_right {
-              player.position.x = tile_rect.x - player_rect.width
-            }
-            else {
-              player.position.x = tile_rect.x + tile_rect.width
-            }
+        resolve_x := min(overlap_left, overlap_right)
+        resolve_y := min(overlap_top, overlap_bottom)
+
+        if resolve_x < resolve_y {  // horizontal collision
+          if overlap_left < overlap_right {
+            collision_result.penetration.x = -overlap_left
           }
-          else { // vertical collision
-            if overlap_top < overlap_bottom {
-              player.position.y = tile_rect.y - tile_rect.height - player_rect.height
-            }
-            else {
-              player.position.y = tile_rect.y
-            }
+          else {
+            collision_result.penetration.x = overlap_right
           }
         }
+        else { // vertical collision
+          if overlap_top < overlap_bottom {
+            collision_result.penetration.y = -overlap_top
+          }
+          else {
+            collision_result.penetration.y = overlap_bottom
+          }
+        }
+
+        append(&scene.collisions, collision_result)
       }
     }
   }
 }
 
+SolvePlayerTileCollision :: proc(player, tile: ^Entity, penetration: rl.Vector2) {
+  player.position += penetration
+}
+
 SolveCollision :: proc(scene: ^Scene) {
-  for collision in scene.collisions {
+  for &collision, iter in scene.collisions {
+    #partial switch &a_kind in collision.a.kind_data {
+      case PlayerData: {
+        #partial switch &b_kind in collision.b.kind_data {
+          case TileData: {
+            SolvePlayerTileCollision(collision.a, collision.b, collision.penetration)
+          }
+        }
+      }
+
+      case TileData: {
+        #partial switch &b_kind in collision.b.kind_data {
+          case PlayerData: {
+            SolvePlayerTileCollision(collision.b, collision.a, -collision.penetration)
+          }
+        }
+      }
+    }
   }
 }
 
