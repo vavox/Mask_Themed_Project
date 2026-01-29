@@ -100,7 +100,8 @@ Scene :: struct {
   current_level: Level,
   player_texture: rl.Texture,
   environment_texture: rl.Texture,
-  npc_texture: rl.Texture
+  npc_texture: rl.Texture,
+  sounds: Sounds
 }
 
 Camera :: struct {
@@ -112,6 +113,15 @@ Camera :: struct {
   view_width: i32,
   view_height: i32,
   follow_speed: f32,
+}
+
+Sounds :: struct {
+  world_switch: rl.Sound,
+  button_press: rl.Sound,
+  trap_trigger: rl.Sound,
+  player_move: rl.Sound,
+  normal_world_music: rl.Music,
+  other_world_music: rl.Music
 }
 
 Level :: struct {

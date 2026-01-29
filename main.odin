@@ -20,12 +20,14 @@ main :: proc() {
 
   scene: systems.Scene
   systems.InitScene(&scene, 320, 180, 16, player_texture, environment_texture, npc_texture)
-
+  
+  // scene.sounds = systems.LoadSounds()
   for !rl.WindowShouldClose() {
     dt := rl.GetFrameTime()
     HandleInput(&scene)
 
     systems.UpdateScene(&scene, dt)
+    // systems.UpdateMusic(&scene)
     
     rl.BeginTextureMode(target_texture)
       rl.ClearBackground(rl.WHITE)
@@ -45,7 +47,7 @@ main :: proc() {
       rl.DrawTexturePro(target_texture.texture, source_rect, dest_rect, rl.Vector2{0.0, 0.0}, 0, tint_color)
     rl.EndDrawing()
   }
-
+  // systems.UnloadSounds(scene.sounds)
   rl.CloseWindow()
 }
 

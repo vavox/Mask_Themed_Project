@@ -25,6 +25,21 @@ InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player
   LoadEntities(scene, level)
 }
 
+UpdateMusic :: proc(scene: ^Scene) {
+  if scene.other_world {
+      rl.UpdateMusicStream(scene.sounds.other_world_music)
+      if !rl.IsMusicStreamPlaying(scene.sounds.other_world_music) {
+          rl.PlayMusicStream(scene.sounds.other_world_music)
+      }
+      rl.StopMusicStream(scene.sounds.normal_world_music)
+  } else {
+      rl.UpdateMusicStream(scene.sounds.normal_world_music)
+      if !rl.IsMusicStreamPlaying(scene.sounds.normal_world_music) {
+          rl.PlayMusicStream(scene.sounds.normal_world_music)
+      }
+      rl.StopMusicStream(scene.sounds.other_world_music)
+  }
+}
 
 UpdateScene :: proc(scene: ^Scene, dt: f32) {
   clear(&scene.collisions)
@@ -51,6 +66,7 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
           kind_data.state = .MoveRight
           movement_direction.x = 1
         }
+        
         movement_speed:f32 = 55
         kind_data.velocity = rl.Vector2Normalize(movement_direction) * movement_speed
 
@@ -64,11 +80,15 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
 
         if kind_data.state != .Idle {
           AnimateSprite(&kind_data.sprite, dt)
+          // if !rl.IsSoundPlaying(scene.sounds.player_move) {
+            // rl.PlaySound(scene.sounds.player_move)
+          // }
         }
 
         if rl.IsKeyPressed(.V) {
           scene.other_world = !scene.other_world
           SwitchWorld(scene, scene.current_level, scene.other_world)
+          // rl.PlaySound(scene.sounds.world_switch)
         }
 
         // Test purposes
@@ -159,15 +179,26 @@ SolvePlayerTileCollision :: proc(player, tile: ^Entity, penetration: rl.Vector2)
   player.position += penetration
 }
 
-SolvePlayerButtonCollision :: proc(player, button: ^Entity) {
+SolvePlayerButtonCollision :: proc(player, button: ^Entity, sounds: Sounds) {
   if button_data, result := &button.kind_data.(ButtonData); result {
-    button_data.pressed = true
+    if !button_data.pressed {
+        button_data.pressed = true
+        // if !rl.IsSoundPlaying(scene.sounds.button_press) {
+          // rl.PlaySound(sounds.button_press)
+        // }
+    }
+    fmt.print("button_data.pressed\n")
   }
 }
 
-SolveSpiritTrapCollision :: proc(spirit, trap: ^Entity) {
+SolveSpiritTrapCollision :: proc(spirit, trap: ^Entity, sounds: Sounds) {
   if spirit_data, result := &spirit.kind_data.(EnemyData); result {
-    spirit_data.trapped = true
+    if !spirit_data.trapped {
+        spirit_data.trapped = true
+        // if !rl.IsSoundPlaying(scene.sounds.trap_trigger) {
+          // rl.PlaySound(sounds.trap_trigger)
+        // }
+    }
   }
 }
 
@@ -181,7 +212,7 @@ SolveCollision :: proc(scene: ^Scene) {
           }
 
           case ButtonData: {
-            SolvePlayerButtonCollision(collision.a, collision.b)
+            SolvePlayerButtonCollision(collision.a, collision.b, scene.sounds)
           }
         }
       }
@@ -189,7 +220,7 @@ SolveCollision :: proc(scene: ^Scene) {
       case EnemyData: {
         #partial switch &b_kind in collision.b.kind_data {
           case SpiritTrapData: {
-            SolveSpiritTrapCollision(collision.a, collision.b)
+            SolveSpiritTrapCollision(collision.a, collision.b, scene.sounds)
           }
         }
       }
@@ -197,7 +228,7 @@ SolveCollision :: proc(scene: ^Scene) {
       case ButtonData: {
         #partial switch &b_kind in collision.b.kind_data {
           case PlayerData: {
-            SolvePlayerButtonCollision(collision.b, collision.a)
+            SolvePlayerButtonCollision(collision.b, collision.a, scene.sounds)
           }
         }
       }
@@ -205,7 +236,7 @@ SolveCollision :: proc(scene: ^Scene) {
       case SpiritTrapData: {
         #partial switch &b_kind in collision.b.kind_data {
           case EnemyData: {
-            SolveSpiritTrapCollision(collision.b, collision.a)
+            SolveSpiritTrapCollision(collision.b, collision.a, scene.sounds)
           }
         }
       }
