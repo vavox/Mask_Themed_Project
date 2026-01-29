@@ -19,65 +19,82 @@ InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player
 
   scene.camera = InitCamera(scene.width, scene.height, 320, 180)
   
-  scene.player_id = AddPlayer(scene, Player{
+  legs_offset:f32 = 4
+  shadow_offset:f32 = 2
+  width_offset:f32 = 4
+  sprite_dimension := rl.Vector2{16, 22}
+
+  scene.player_id = AddPlayer(scene, Entity{
     position = rl.Vector2{100, 100},
-    velocity = rl.Vector2{0, 0},
-    sprite = Sprite{
-      texture = player_texture,
-      dimension = rl.Vector2{16, 22},
-      current_frame = 0,
-      frames_count = 4,
-      frame_duration = 0.2
+    collision = true,
+    collision_rect = rl.Rectangle {
+      x = 0,
+      y = sprite_dimension.y - legs_offset - shadow_offset,
+      width = sprite_dimension.x - width_offset,
+      height = legs_offset,
+    },
+    kind_data = PlayerData{
+      velocity = rl.Vector2{0, 0},
+      sprite = Sprite{
+        texture = player_texture,
+        dimension = sprite_dimension,
+        current_frame = 0,
+        frames_count = 4,
+        frame_duration = 0.2
+      },
     },
   })
 
-  AddEnemy(scene, Enemy{
+  AddEnemy(scene, Entity{
     position = {240, 20},
-    sprite = Sprite {
-      texture = npc_texture,
-      dimension = rl.Vector2{16, 27},
-      current_frame = 0,
-      frames_count = 4,
-      frame_duration = 0.2
-    }
+    collision = false,
+    kind_data = EnemyData{
+      sprite = Sprite {
+        texture = npc_texture,
+        dimension = rl.Vector2{16, 27},
+        current_frame = 0,
+        frames_count = 4,
+        frame_duration = 0.2
+      }
+    },
   })
 }
 
 
 UpdateScene :: proc(scene: ^Scene, dt: f32) {
   for &entity in scene.entities {
-    switch &e in entity {
-      case Player: {
-        UpdateCamera(&scene.camera, e.position, dt)
-        e.state = .Idle
+    switch &kind_data in entity.kind_data {
+      case PlayerData: {
+        UpdateCamera(&scene.camera, entity.position, dt)
+        kind_data.state = .Idle
         movement_direction := rl.Vector2{0, 0}
         if rl.IsKeyDown(.W) {
-          e.state = .MoveUp
+          kind_data.state = .MoveUp
           movement_direction.y = -1
         }
         if rl.IsKeyDown(.S) {
-          e.state = .MoveDown
+          kind_data.state = .MoveDown
           movement_direction.y = 1
         }
         if rl.IsKeyDown(.A) {
-          e.state = .MoveLeft
+          kind_data.state = .MoveLeft
           movement_direction.x = -1
         }
         if rl.IsKeyDown(.D) {
-          e.state = .MoveRight
+          kind_data.state = .MoveRight
           movement_direction.x = 1
         }
         movement_speed:f32 = 55
-        e.velocity = rl.Vector2Normalize(movement_direction) * movement_speed
+        kind_data.velocity = rl.Vector2Normalize(movement_direction) * movement_speed
 
-        CollisionDetection(scene, &e.position)
-        e.position += e.velocity*dt
-        e.position = rl.Vector2Clamp(e.position, rl.Vector2{0,0}, rl.Vector2{f32(scene.width) - e.sprite.dimension.x, f32(scene.height) - e.sprite.dimension.y})
+        CollisionDetection(scene)
+        entity.position += kind_data.velocity*dt
+        entity.position = rl.Vector2Clamp(entity.position, rl.Vector2{0,0}, rl.Vector2{f32(scene.width) - kind_data.sprite.dimension.x, f32(scene.height) - kind_data.sprite.dimension.y})
 
-        e.sprite.offset = PlayerStateSpriteOffset[e.state]
+        kind_data.sprite.offset = PlayerStateSpriteOffset[kind_data.state]
 
-        if e.state != .Idle {
-          AnimateSprite(&e.sprite, dt)
+        if kind_data.state != .Idle {
+          AnimateSprite(&kind_data.sprite, dt)
         }
 
         if rl.IsKeyPressed(.V) {
@@ -85,47 +102,52 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
         }
       }
 
-      case Enemy: {
+      case EnemyData: {
         if scene.other_world {
-          entity := scene.entities[scene.player_id]
+          player := scene.entities[scene.player_id]
           movement_speed:f32 = 55
-          if player, result := entity.(Player); result {
-            e.velocity = movement_speed  *rl.Vector2Normalize(player.position - e.position)
-            e.position += e.velocity*dt
+          if player_data, result := player.kind_data.(PlayerData); result {
+            kind_data.velocity = movement_speed  *rl.Vector2Normalize(player.position - entity.position)
+            entity.position += kind_data.velocity*dt
           }
         }
       }
 
-      case Tile: {
+      case ButtonData: {
+      }
+
+      case TileData: {
       }
     }
   }
 }
 
-CollisionDetection :: proc(scene: ^Scene, position: ^[2]f32){
-  player := scene.entities[scene.player_id].(Player)
+CollisionDetection :: proc(scene: ^Scene){
+  player := &scene.entities[scene.player_id]
+  player_data := &player.kind_data.(PlayerData)
   legs_offset:f32 = 4
   shadow_offset:f32 = 2
   width_offset:f32 = 4
   player_rect := rl.Rectangle {
-    x = position.x,
-    y = position.y + player.sprite.dimension.y - legs_offset - shadow_offset,
-    width = player.sprite.dimension.x - width_offset,
+    x = player.position.x,
+    y = player.position.y + player_data.sprite.dimension.y - legs_offset - shadow_offset,
+    width = player_data.sprite.dimension.x - width_offset,
     height = legs_offset,
   }
 
   for &entity in scene.entities {
-    switch &e in entity{
-      case Player: { }
-      case Enemy: { }
-      case Tile: {
-        if !e.collision do continue
+    switch &kind in entity.kind_data{
+      case PlayerData: { }
+      case EnemyData: { }
+      case ButtonData: { }
+      case TileData: {
+        if !entity.collision do continue
         
         tile_rect := rl.Rectangle {
-          x = f32(e.grid_x * 16),
-          y = f32(e.grid_y * 16),
-          width = e.sprite.dimension.x,
-          height = e.sprite.dimension.y,
+          x = f32(kind.grid_x * 16),
+          y = f32(kind.grid_y * 16),
+          width = kind.sprite.dimension.x,
+          height = kind.sprite.dimension.y,
         }
         
         if rl.CheckCollisionRecs(player_rect, tile_rect) {
@@ -139,28 +161,30 @@ CollisionDetection :: proc(scene: ^Scene, position: ^[2]f32){
           
           if resolve_x < resolve_y {  // horizontal collision
             if overlap_left < overlap_right {
-              position.x = tile_rect.x - player_rect.width
+              player.position.x = tile_rect.x - player_rect.width
             }
             else {
-              position.x = tile_rect.x + tile_rect.width
+              player.position.x = tile_rect.x + tile_rect.width
             }
           }
           else { // vertical collision
             if overlap_top < overlap_bottom {
-              position.y = tile_rect.y - tile_rect.height - player_rect.height
+              player.position.y = tile_rect.y - tile_rect.height - player_rect.height
             }
             else {
-              position.y = tile_rect.y
+              player.position.y = tile_rect.y
             }
           }
         }
       }
     }
   }
-  
 }
 
-
+SolveCollision :: proc(scene: ^Scene) {
+  for collision in scene.collisions {
+  }
+}
 
 DrawScene :: proc(scene: Scene) {
   camera := rl.Camera2D{
@@ -183,7 +207,7 @@ DrawScene :: proc(scene: Scene) {
         entity_id := scene.tile_grid.tiles[tile_index]
         if entity_id < i32(len(scene.entities)) {
           entity := scene.entities[entity_id]
-          if tile, result := entity.(Tile); result {
+          if tile, result := entity.kind_data.(TileData); result {
             position := rl.Vector2{f32(16*tile.grid_x), f32(16*tile.grid_y)}
             rl.DrawTextureRec(tile.sprite.texture, tile.sprite.draw_rect, position, rl.WHITE)
           }
@@ -193,28 +217,31 @@ DrawScene :: proc(scene: Scene) {
   }
 
   for entity in scene.entities {
-    switch &e in entity {
-      case Player: {
+    switch &kind in entity.kind_data {
+      case PlayerData: {
         draw_rect := rl.Rectangle{
-          x = f32(e.sprite.offset.x),
-          y = f32(e.sprite.offset.y),
-          width = e.sprite.dimension.x,
-          height = e.sprite.dimension.y,
+          x = f32(kind.sprite.offset.x),
+          y = f32(kind.sprite.offset.y),
+          width = kind.sprite.dimension.x,
+          height = kind.sprite.dimension.y,
         }
-        rl.DrawTextureRec(e.sprite.texture, draw_rect, e.position, rl.WHITE)
+        rl.DrawTextureRec(kind.sprite.texture, draw_rect, entity.position, rl.WHITE)
       }
 
-      case Enemy: {
+      case EnemyData: {
         draw_rect := rl.Rectangle{
-          x = f32(e.sprite.offset.x),
-          y = f32(e.sprite.offset.y),
-          width = e.sprite.dimension.x,
-          height = e.sprite.dimension.y,
+          x = f32(kind.sprite.offset.x),
+          y = f32(kind.sprite.offset.y),
+          width = kind.sprite.dimension.x,
+          height = kind.sprite.dimension.y,
         }
-        rl.DrawTextureRec(e.sprite.texture, draw_rect, e.position, rl.RED)
+        rl.DrawTextureRec(kind.sprite.texture, draw_rect, entity.position, rl.RED)
       }
 
-      case Tile: {
+      case ButtonData: {
+      }
+
+      case TileData: {
       }
     }
   }
@@ -222,13 +249,13 @@ DrawScene :: proc(scene: Scene) {
   rl.EndMode2D()
 }
 
-AddPlayer :: proc(scene: ^Scene, player: Player) -> i32 {
+AddPlayer :: proc(scene: ^Scene, player: Entity) -> i32 {
   id := i32(len(scene.entities))
   append(&scene.entities, player)
   return id
 }
 
-AddEnemy :: proc(scene: ^Scene, enemy: Enemy) -> i32 {
+AddEnemy :: proc(scene: ^Scene, enemy: Entity) -> i32 {
   id := i32(len(scene.entities))
   append(&scene.entities, enemy)
   return id

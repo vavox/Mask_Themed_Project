@@ -2,10 +2,18 @@ package systems
 
 import rl "vendor:raylib"
 
-Entity :: union {
-  Player,
-  Enemy,
-  Tile,
+EntityKindData :: union {
+  PlayerData,
+  EnemyData,
+  ButtonData,
+  TileData,
+}
+
+Entity :: struct {
+  position: rl.Vector2,
+  collision: b32,
+  collision_rect: rl.Rectangle,
+  kind_data: EntityKindData,
 }
 
 PlayerState :: enum {
@@ -39,31 +47,37 @@ StaticSprite :: struct {
   draw_rect: rl.Rectangle,
 }
 
-Player :: struct {
+PlayerData :: struct {
   state: PlayerState,
-  position: rl.Vector2,
   velocity: rl.Vector2,
-  sprite: Sprite
+  sprite: Sprite,
 }
 
-Enemy :: struct {
-  position: rl.Vector2,
+EnemyData :: struct {
   velocity: rl.Vector2,
-  sprite: Sprite
+  sprite: Sprite,
 }
 
-Tile :: struct {
+ButtonData :: struct {
+  toggle_entity: ^Entity,
+}
+
+TileData :: struct {
   type: TileType,
   sprite: StaticSprite,
   grid_x: i32,
   grid_y: i32,
-  collision: b32,
 }
 
 TileGrid :: struct {
   tiles: [dynamic]i32,
   width: i32,
   height: i32,
+}
+
+CollisionResult :: struct {
+  a: ^Entity,
+  b: ^Entity,
 }
 
 Scene :: struct {
@@ -74,6 +88,7 @@ Scene :: struct {
   camera: Camera,
   player_id: i32,
   other_world: b32,
+  collisions: [dynamic]CollisionResult,
 }
 
 Camera :: struct {
