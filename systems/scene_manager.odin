@@ -15,101 +15,14 @@ InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player
   scene.tile_grid.width = level.width
   scene.tile_grid.height = level.height
 
-  LoadLevel(scene, level, environment_texture)
+  scene.player_texture = player_texture
+  scene.environment_texture = environment_texture
+  scene.npc_texture = npc_texture
 
+  LoadLevel(scene, level)
+  scene.current_level = level
   scene.camera = InitCamera(scene.width, scene.height, 320, 180)
-  
-  legs_offset:f32 = 4
-  shadow_offset:f32 = 2
-  width_offset:f32 = 4
-  sprite_dimension := rl.Vector2{16, 22}
-
-  AddEntity(scene, Entity{
-    position = PositionFromGrid(scene, 12, 7),
-    collision = true,
-    collision_rect = rl.Rectangle {
-      x = 0,
-      y = 0,
-      width = 16,
-      height = 16,
-    },
-    kind_data = ButtonData {
-      sprite = StaticSprite {
-        texture = environment_texture,
-        dimension = rl.Vector2{16, 16},
-        draw_rect = rl.Rectangle {
-          x = 0,
-          y = 0,
-          width = 16,
-          height = 16
-        }
-      }
-    }
-  })
-
-  AddEntity(scene, Entity{
-    position = PositionFromGrid(scene, 14, 4),
-    collision = true,
-    collision_rect = rl.Rectangle {
-      x = 0,
-      y = 0,
-      width = 16,
-      height = 16,
-    },
-    kind_data = SpiritTrapData {
-      sprite = StaticSprite {
-        texture = environment_texture,
-        dimension = rl.Vector2{16, 16},
-        draw_rect = rl.Rectangle {
-          x = 0,
-          y = 0,
-          width = 16,
-          height = 16
-        }
-      }
-    }
-  })
-
-  scene.player_id = AddPlayer(scene, Entity{
-    position = rl.Vector2{100, 100},
-    collision = true,
-    collision_rect = rl.Rectangle {
-      x = 0,
-      y = sprite_dimension.y - legs_offset - shadow_offset,
-      width = sprite_dimension.x - width_offset,
-      height = legs_offset,
-    },
-    kind_data = PlayerData{
-      velocity = rl.Vector2{0, 0},
-      sprite = Sprite{
-        texture = player_texture,
-        dimension = sprite_dimension,
-        current_frame = 0,
-        frames_count = 4,
-        frame_duration = 0.2
-      },
-    },
-  })
-
-  AddEnemy(scene, Entity{
-    position = {240, 20},
-    collision = true,
-    collision_rect = rl.Rectangle {
-      x = 0,
-      y = sprite_dimension.y - legs_offset - shadow_offset,
-      width = sprite_dimension.x - width_offset,
-      height = legs_offset,
-    },
-    kind_data = EnemyData{
-      sprite = Sprite {
-        texture = npc_texture,
-        dimension = rl.Vector2{16, 27},
-        current_frame = 0,
-        frames_count = 4,
-        frame_duration = 0.2
-      }
-    },
-  })
+  LoadEntities(scene, level)
 }
 
 
@@ -155,6 +68,12 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
 
         if rl.IsKeyPressed(.V) {
           scene.other_world = !scene.other_world
+          SwitchWorld(scene, scene.current_level, scene.other_world)
+        }
+
+        // Test purposes
+        if rl.IsKeyPressed(.R) {
+          RestartLevel(scene, TEST_LEVEL)
         }
       }
 

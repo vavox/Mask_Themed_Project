@@ -97,6 +97,10 @@ Scene :: struct {
   player_id: i32,
   other_world: b32,
   collisions: [dynamic]CollisionResult,
+  current_level: Level,
+  player_texture: rl.Texture,
+  environment_texture: rl.Texture,
+  npc_texture: rl.Texture
 }
 
 Camera :: struct {
@@ -115,6 +119,8 @@ Level :: struct {
   width: i32,
   height: i32,
   data: cstring,
+  other_world_data: cstring,
+  entities_data: cstring,
 }
 
 PlayerStateSpriteOffset: [PlayerState][2]i32 = {
@@ -152,4 +158,36 @@ TEST_LEVEL :: Level{
          "WWWWWWWWWWWWWWWWWWWW" +
          "WWWWWWWWWWWWWWWWWWWW" +
          "WWWWWWWWWWWWWWWWWWWW",
+  other_world_data = "GGGGGGGGGGGGGGGGGGGG" +
+                     "GGGGGGGGGGGGGGGGGGGG" +
+                     "GGSSGGGGWWWGGGSGGGGG" +
+                     "GGSSGGSSWWWSSSSGGGGG" +
+                     "GGGGGGSGGGGGGGGGGGGG" +
+                     "GGGGGGSSSSSGGGGGGGGG" +
+                     "GGGGGGGGGGSGGGGGGGGG" +
+                     "GGGGGGGGGGSGGGGGGGGG" +
+                     "GGGGGGWWGGGGGGGGGGGG" +
+                     "GGGGGGWWGGGGGGGGGGGG" +
+                     "GGGGGGWWGGGGGGGGGGGG" +
+                     "GGGGGGWWGGGGGGGGGGGG" +
+                     "WWWWWWWWWWWWWWWWWWWW" +
+                     "WWWWWWWWWWWWWWWWWWWW" +
+                     "WWWWWWWWWWWWWWWWWWWW",
+  // P=Player, S=Spirit, T=Trap, I-Interactable
+  entities_data = "--------------------" +
+                  "--------------------" +
+                  "-S--------------S---" +
+                  "--------------------" +
+                  "--------------------" +
+                  "---I----------------" +
+                  "--------------------" +
+                  "---P------------TT--" +
+                  "----------------T---" +
+                  "-----I--------------" +
+                  "--------------------" +
+                  "--------------------" +
+                  "--------------------" +
+                  "-----------------S--" +
+                  "--------------------",
 }
+
