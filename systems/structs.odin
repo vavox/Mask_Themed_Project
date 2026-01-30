@@ -63,6 +63,7 @@ EnemyData :: struct {
 ButtonData :: struct {
   sprite: StaticSprite,
   pressed: b32,
+  active: b32,
 }
 
 SpiritTrapData :: struct {

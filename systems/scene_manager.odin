@@ -44,6 +44,9 @@ UpdateMusic :: proc(scene: ^Scene) {
 UpdateScene :: proc(scene: ^Scene, dt: f32) {
   clear(&scene.collisions)
 
+  CollisionDetection(scene)
+  SolveCollision(scene)
+
   for &entity in scene.entities {
     switch &kind_data in entity.kind_data {
       case PlayerData: {
@@ -72,9 +75,6 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
 
         entity.position += kind_data.velocity*dt
         entity.position = rl.Vector2Clamp(entity.position, rl.Vector2{0,0}, rl.Vector2{f32(scene.width) - kind_data.sprite.dimension.x, f32(scene.height) - kind_data.sprite.dimension.y})
-
-        CollisionDetection(scene)
-        SolveCollision(scene)
 
         kind_data.sprite.offset = PlayerStateSpriteOffset[kind_data.state]
 
@@ -109,7 +109,18 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
       }
 
       case ButtonData: {
-        // --AlNov: @TODO If button updated before related object it will be not pressed even if Player stands on it 
+        entered := kind_data.active && !kind_data.pressed
+        leaved := !kind_data.active && kind_data.pressed
+        if entered {
+          fmt.println("ButtonExit")
+          kind_data.active = false
+        }
+
+        if leaved {
+          fmt.println("ButtonEnter")
+          kind_data.active = true
+        }
+
         kind_data.pressed = false
       }
 
@@ -181,13 +192,10 @@ SolvePlayerTileCollision :: proc(player, tile: ^Entity, penetration: rl.Vector2)
 
 SolvePlayerButtonCollision :: proc(player, button: ^Entity, sounds: Sounds) {
   if button_data, result := &button.kind_data.(ButtonData); result {
-    if !button_data.pressed {
-        button_data.pressed = true
+  button_data.pressed = true
         // if !rl.IsSoundPlaying(scene.sounds.button_press) {
           // rl.PlaySound(sounds.button_press)
         // }
-    }
-    fmt.print("button_data.pressed\n")
   }
 }
 
