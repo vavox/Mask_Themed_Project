@@ -5,26 +5,36 @@ import "core:math"
 import "core:slice"
 import rl "vendor:raylib"
 
-InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player_texture: rl.Texture, environment_texture: rl.Texture, npc_texture: rl.Texture, level: Level = LevelOne) {
+InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player_texture: rl.Texture, environment_texture: rl.Texture, npc_texture: rl.Texture, levels: []Level) -> b32 {
   grid_width := i32(math.ceil(f32(width)/f32(tile_size)))
   grid_height := i32(math.ceil(f32(height)/f32(tile_size)))
 
-  scene.width = level.width * 16
-  scene.height = level.height * 16
-  scene.tile_grid.width = level.width
-  scene.tile_grid.height = level.height
+  if len(levels) == 0 || levels == nil {
+    fmt.printf("ERROR! InitScene levels list is empty!\nFurther loading aborted!")
+    return false
+  }
+  
+  scene.current_level_idx = 0
+  scene.current_level = levels[scene.current_level_idx]
+  scene.level_list = levels
+
+  scene.width = width //scene.current_level.width * 16
+  scene.height = height //scene.current_level.height * 16
+  scene.tile_grid.width = scene.current_level.width
+  scene.tile_grid.height = scene.current_level.height
 
   scene.player_texture = player_texture
   scene.environment_texture = environment_texture
   scene.npc_texture = npc_texture
 
-  LoadLevel(scene, level)
-  scene.current_level = level
-  scene.camera = InitCamera(scene.width, scene.height, width, height)
-  LoadEntities(scene, level)
+  LoadLevel(scene, scene.current_level)
+  scene.camera = InitCamera(scene.current_level.width * 16, scene.current_level.height * 16, width, height)
+  LoadEntities(scene, scene.current_level)
 
   SortEntities(scene)
   scene.active_world = .Real
+
+  return true
 }
 
 UpdateMusic :: proc(scene: ^Scene) {
@@ -108,7 +118,7 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
 
         // Test purposes
         if rl.IsKeyPressed(.R) {
-          RestartLevel(scene, scene.current_level)
+          ReloadLevel(scene, scene.current_level)
         }
 
         if kind_data.interaction_zone != nil {

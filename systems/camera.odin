@@ -1,5 +1,6 @@
 package systems
 
+import "core:fmt"
 import rl "vendor:raylib"
 
 // Player sprite center offset (16x22 sprite)
@@ -16,6 +17,15 @@ InitCamera :: proc(world_width: i32, world_height: i32, view_width: i32, view_he
     view_width = view_width,
     view_height = view_height
   }
+}
+
+ReloadCameraRect :: proc(camera: ^Camera, scene: ^Scene) {
+  camera.view_width = scene.width
+  camera.view_height = scene.height
+  camera.world_width = scene.current_level.width * 16
+  camera.world_height = scene.current_level.height * 16
+  camera.position = rl.Vector2{f32(scene.width) / 2, f32(scene.height) / 2}
+  camera.target = rl.Vector2{f32(scene.width) / 2, f32(scene.height) / 2}
 }
 
 UpdateCamera :: proc(camera: ^Camera, player_position: rl.Vector2, dt: f32) {

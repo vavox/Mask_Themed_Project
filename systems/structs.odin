@@ -157,6 +157,8 @@ Scene :: struct {
   npc_texture: rl.Texture,
   sounds: Sounds,
   active_world: World,
+  level_list: []Level,
+  current_level_idx: i32
 }
 
 Camera :: struct {
@@ -183,6 +185,7 @@ Level :: struct {
   name: cstring,
   width: i32,
   height: i32,
+  completed: b32,
   data: cstring,
   other_world_data: cstring,
   entities_data: cstring,

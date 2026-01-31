@@ -74,7 +74,11 @@ SolvePlayerTileCollision :: proc(player, tile: ^Entity, penetration: rl.Vector2)
 SolvePlayerDoorCollision :: proc(player, door: ^Entity, penetration: rl.Vector2, scene: ^Scene) {
   if door_data, ok := &door.kind_data.(DoorData); ok {
     if door_data.is_open {
-      RestartLevel(scene, scene.current_level)  // Restart for completion for now
+        if scene.current_level_idx < i32(len(scene.level_list) - 1) {
+            scene.current_level_idx += 1
+            scene.current_level = scene.level_list[scene.current_level_idx]
+        }
+        ReloadLevel(scene, scene.current_level)  // Restart for completion for now
     } else {
       player.position += penetration
     }

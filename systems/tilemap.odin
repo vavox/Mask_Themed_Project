@@ -358,7 +358,7 @@ SwitchWorld :: proc(scene: ^Scene, level: Level, to_other_world: b32) {
     }
 }
 
-RestartLevel :: proc(scene: ^Scene, level: Level) {
+ReloadLevel :: proc(scene: ^Scene, level: Level) {
   // Clean up door data before clearing
   for &entity in scene.entities {
     if door_data, ok := &entity.kind_data.(DoorData); ok {
@@ -376,8 +376,6 @@ RestartLevel :: proc(scene: ^Scene, level: Level) {
   scene.player_id = 0
   
   // Reset grid dimensions
-  scene.width = level.width * 16
-  scene.height = level.height * 16
   scene.tile_grid.width = level.width
   scene.tile_grid.height = level.height
   
@@ -386,6 +384,6 @@ RestartLevel :: proc(scene: ^Scene, level: Level) {
   LoadEntities(scene, level)
   SortEntities(scene)
 
-  
+  ReloadCameraRect(&scene.camera, scene)
   scene.active_world = .Real
 }
