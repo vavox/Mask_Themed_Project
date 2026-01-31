@@ -2,6 +2,12 @@ package systems
 
 import rl "vendor:raylib"
 
+World :: enum {
+  Real,
+  Other,
+  Both
+}
+
 EntityKindData :: union {
   PlayerData,
   EnemyData,
@@ -18,6 +24,7 @@ Entity :: struct {
   collision: b32,
   collision_rect: rl.Rectangle,
   kind_data: EntityKindData,
+  drawing_world: World
 }
 
 PlayerState :: enum {
@@ -128,6 +135,13 @@ DoorConnectionMapping :: struct {
   required_button_ids: []i32,
 }
 
+// Position based drawing world definition
+DrawingWorldSpecifics :: struct {
+  grid_x: i32,
+  grid_y: i32,
+  world: World,
+}
+
 Scene :: struct {
   entities: [dynamic]Entity,
   width: i32,
@@ -142,6 +156,7 @@ Scene :: struct {
   environment_texture: rl.Texture,
   npc_texture: rl.Texture,
   sounds: Sounds,
+  active_world: World,
 }
 
 Camera :: struct {
@@ -174,6 +189,7 @@ Level :: struct {
   
   button_ids: []ButtonIDMapping,
   door_connections: []DoorConnectionMapping,
+  drawing_world_specifics: []DrawingWorldSpecifics,
 }
 
 PlayerIdleSpriteOffset: [PlayerDirection][2]i32 = {
@@ -260,4 +276,9 @@ TEST_LEVEL :: Level{
   door_connections = {
     {grid_x = 3, grid_y = 10, required_button_ids = {0, 1}},  // Door at (3,10) needs buttons 0 and 1
   },
+
+  // World drawing separation
+  drawing_world_specifics = {
+    {grid_x = 3, grid_y = 10, world = .Other}
+  }
 }

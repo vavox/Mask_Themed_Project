@@ -120,6 +120,16 @@ GetDoorConnectionForPosition :: proc(level: Level, grid_x: i32, grid_y: i32) -> 
   return nil, false
 }
 
+// Get world to draw in
+GetDrawingWorld :: proc(level: Level, grid_x: i32, grid_y: i32) -> World {
+  for mapping in level.drawing_world_specifics {
+    if mapping.grid_x == grid_x && mapping.grid_y == grid_y {
+      return mapping.world
+    }
+  }
+  return .Both
+}
+
 LoadEntities :: proc(scene: ^Scene, level: Level) {
   LEGS_OFFSET :: 4
   SHADOW_OFFSET :: 2
@@ -156,7 +166,8 @@ LoadEntities :: proc(scene: ^Scene, level: Level) {
                 width = DEFAULT_TILE_HEIGHT,
                 height = DEFAULT_TILE_WIDTH,
               },
-              kind_data = InteractionZoneData{}
+              kind_data = InteractionZoneData{},
+              drawing_world = GetDrawingWorld(level, x, y)
             })
             scene.player_id = AddPlayer(scene, Entity{
                 position = PositionFromGrid(scene, x, y),
@@ -175,6 +186,7 @@ LoadEntities :: proc(scene: ^Scene, level: Level) {
                     },
                     interaction_zone = &scene.entities[interaction_zone_id],
                 },
+                drawing_world = GetDrawingWorld(level, x, y)
             })
               
           case 'S':
@@ -192,6 +204,7 @@ LoadEntities :: proc(scene: ^Scene, level: Level) {
                         frame_duration = 0.2,
                     },
                 },
+                drawing_world = GetDrawingWorld(level, x, y)
             })
 
           case 'T':
@@ -206,6 +219,7 @@ LoadEntities :: proc(scene: ^Scene, level: Level) {
                           draw_rect = {0, 0, 16, 16},
                       },
                   },
+                  drawing_world = GetDrawingWorld(level, x, y)
               })
 
           case 'B':
@@ -220,6 +234,7 @@ LoadEntities :: proc(scene: ^Scene, level: Level) {
                         draw_rect = {0, 0, 16, 16},
                     },
                   },
+                  drawing_world = GetDrawingWorld(level, x, y)
               })
               
           case 'I':
@@ -238,6 +253,7 @@ LoadEntities :: proc(scene: ^Scene, level: Level) {
                       },
                       button_id = button_id
                   },
+                  drawing_world = GetDrawingWorld(level, x, y)
               })
 
           case 'D':
@@ -266,6 +282,7 @@ LoadEntities :: proc(scene: ^Scene, level: Level) {
                       is_open = false,
                       required_button_ids = door_required_ids,
                   },
+                  drawing_world = GetDrawingWorld(level, x, y)
               })
           }
       }
@@ -369,6 +386,7 @@ RestartLevel :: proc(scene: ^Scene, level: Level) {
   LoadEntities(scene, level)
   SortEntities(scene)
   
+  scene.active_world = .Real
   // Reset camera to player position
   if scene.player_id < i32(len(scene.entities)) {
       player := scene.entities[scene.player_id]

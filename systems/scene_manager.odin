@@ -24,6 +24,7 @@ InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player
   LoadEntities(scene, level)
 
   SortEntities(scene)
+  scene.active_world = .Real
 }
 
 UpdateMusic :: proc(scene: ^Scene) {
@@ -100,6 +101,7 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
 
         if rl.IsKeyPressed(.V) {
           scene.other_world = !scene.other_world
+          scene.active_world = .Other if scene.other_world else .Real
           SwitchWorld(scene, scene.current_level, scene.other_world)
           // rl.PlaySound(scene.sounds.world_switch)
         }
@@ -206,8 +208,13 @@ DrawScene :: proc(scene: Scene) {
       }
     }
   }
-  
+
   for entity in scene.entities {
+    // Skip entity drawing if entity world and current world mismatch
+    if entity.drawing_world != scene.active_world && entity.drawing_world != .Both {
+      continue
+    }
+
     switch &kind in entity.kind_data {
       case PlayerData: {
         draw_rect := rl.Rectangle{

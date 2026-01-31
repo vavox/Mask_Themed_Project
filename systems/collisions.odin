@@ -5,9 +5,17 @@ import rl "vendor:raylib"
 
 CollisionDetection :: proc(scene: ^Scene){
   for a_iter := 0; a_iter < len(scene.entities) - 1; a_iter += 1 {
+    a := &scene.entities[a_iter]
+    // Skip collision detection if entity a world and current world mismatch
+    a_valid := a.drawing_world == scene.active_world || a.drawing_world == .Both
+    if !a_valid do continue
+
     for b_iter := a_iter + 1; b_iter < len(scene.entities); b_iter += 1 {
-      a := &scene.entities[a_iter]
       b := &scene.entities[b_iter]
+    
+      // Skip collision detection if entity b world and current world mismatch
+      b_valid := b.drawing_world == scene.active_world || b.drawing_world == .Both
+      if !b_valid do continue
 
       if (!a.collision || !b.collision) do continue
 
