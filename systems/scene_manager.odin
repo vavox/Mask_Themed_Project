@@ -20,7 +20,7 @@ InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player
 
   LoadLevel(scene, level)
   scene.current_level = level
-  scene.camera = InitCamera(scene.width, scene.height, 320, 180)
+  scene.camera = InitCamera(scene.width, scene.height, width, height)
   LoadEntities(scene, level)
 
   SortEntities(scene)

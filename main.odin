@@ -19,7 +19,7 @@ main :: proc() {
   npc_texture := rl.LoadTexture("res/images/NPC_test.png")
 
   scene: systems.Scene
-  systems.InitScene(&scene, 320, 180, 16, player_texture, environment_texture, npc_texture)
+  systems.InitScene(&scene, target_width, target_height, 16, player_texture, environment_texture, npc_texture, systems.TEST_LEVEL)
   
   // scene.sounds = systems.LoadSounds()
   for !rl.WindowShouldClose() {

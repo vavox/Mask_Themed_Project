@@ -22,6 +22,7 @@ UpdateCamera :: proc(camera: ^Camera, player_position: rl.Vector2, dt: f32) {
   player_center := player_position + rl.Vector2{f32(PLAYER_SPRITE_CENTER_X), f32(PLAYER_SPRITE_CENTER_Y)}
   camera.target = player_center
 
+  if camera.world_width <= camera.view_width && camera.world_height <= camera.view_height { return }
   camera.position += (camera.target - camera.position)
 
   half_view_width := f32(camera.view_width) / (2.0 * camera.zoom)

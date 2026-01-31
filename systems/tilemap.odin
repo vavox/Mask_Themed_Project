@@ -385,11 +385,7 @@ RestartLevel :: proc(scene: ^Scene, level: Level) {
   LoadLevel(scene, level)
   LoadEntities(scene, level)
   SortEntities(scene)
+
   
   scene.active_world = .Real
-  // Reset camera to player position
-  if scene.player_id < i32(len(scene.entities)) {
-      player := scene.entities[scene.player_id]
-      scene.camera.position = player.position
-  }
 }
