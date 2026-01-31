@@ -7,6 +7,7 @@ EntityKindData :: union {
   EnemyData,
   ButtonData,
   SpiritTrapData,
+  BoxData,
   TileData,
   InteractionZoneData,
 }
@@ -74,6 +75,10 @@ ButtonData :: struct {
 }
 
 SpiritTrapData :: struct {
+  sprite: StaticSprite,
+}
+
+BoxData :: struct {
   sprite: StaticSprite,
 }
 
@@ -200,7 +205,7 @@ TEST_LEVEL :: Level{
                      "WWWWWWWWWWWWWWWWWWWW" +
                      "WWWWWWWWWWWWWWWWWWWW" +
                      "WWWWWWWWWWWWWWWWWWWW",
-  // P=Player, S=Spirit, T=Trap, I-Interactable
+  // P=Player, S=Spirit, T=Trap, I-Interactable, B=Box
   entities_data = "--------------------" +
                   "--------------------" +
                   "-S--------------S---" +
@@ -208,7 +213,7 @@ TEST_LEVEL :: Level{
                   "--------------------" +
                   "---I----------------" +
                   "--------------------" +
-                  "---P------------TT--" +
+                  "---P--B---------TT--" +
                   "----------------T---" +
                   "-----I--------------" +
                   "--------------------" +

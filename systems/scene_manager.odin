@@ -160,6 +160,9 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
       case SpiritTrapData: {
       }
 
+      case BoxData: {
+      }
+
       case TileData: {
       }
 
@@ -235,6 +238,15 @@ SolvePlayerButtonCollision :: proc(player, button: ^Entity, sounds: Sounds) {
   }
 }
 
+SolvePlayerBoxCollision :: proc(box, player: ^Entity, penetration: rl.Vector2) {
+  box.position += penetration
+  player.position -= penetration
+}
+
+SolveBoxTileCollision :: proc(box, tile: ^Entity, penetration: rl.Vector2) {
+  box.position += penetration
+}
+
 SolveSpiritTrapCollision :: proc(spirit, trap: ^Entity, sounds: Sounds) {
   if spirit_data, result := &spirit.kind_data.(EnemyData); result {
     if !spirit_data.trapped {
@@ -258,6 +270,10 @@ SolveCollision :: proc(scene: ^Scene) {
           case ButtonData: {
             SolvePlayerButtonCollision(collision.a, collision.b, scene.sounds)
           }
+
+          case BoxData: {
+            SolvePlayerBoxCollision(collision.b, collision.a, collision.penetration)
+          }
         }
       }
 
@@ -274,6 +290,10 @@ SolveCollision :: proc(scene: ^Scene) {
           case PlayerData: {
             SolvePlayerButtonCollision(collision.b, collision.a, scene.sounds)
           }
+
+          case BoxData: {
+            SolvePlayerButtonCollision(collision.b, collision.a, scene.sounds)
+          }
         }
       }
 
@@ -285,10 +305,30 @@ SolveCollision :: proc(scene: ^Scene) {
         }
       }
 
+      case BoxData: {
+        #partial switch &b_kind in collision.b.kind_data {
+          case PlayerData: {
+            SolvePlayerBoxCollision(collision.a, collision.b, collision.penetration)
+          }
+
+          case ButtonData: {
+            SolvePlayerButtonCollision(collision.a, collision.b, scene.sounds)
+          }
+
+          case TileData: {
+            SolveBoxTileCollision(collision.a, collision.b, collision.penetration)
+          }
+        }
+      }
+
       case TileData: {
         #partial switch &b_kind in collision.b.kind_data {
           case PlayerData: {
             SolvePlayerTileCollision(collision.b, collision.a, -collision.penetration)
+          }
+
+          case BoxData: {
+            SolveBoxTileCollision(collision.b, collision.a, -collision.penetration)
           }
         }
       }
@@ -362,6 +402,10 @@ DrawScene :: proc(scene: Scene) {
       }
 
       case TileData: {
+      }
+
+      case BoxData: {
+        rl.DrawRectangleV(entity.position, kind.sprite.dimension, rl.VIOLET)
       }
 
       case InteractionZoneData: {

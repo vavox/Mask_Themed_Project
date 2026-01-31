@@ -143,6 +143,21 @@ LoadEntities::proc(scene: ^Scene, level: Level) {
                       },
                   },
               })
+
+          case 'B': {
+              AddEntity(scene, Entity{
+                  position = PositionFromGrid(scene, x, y),
+                  collision = true,
+                  collision_rect = {0, 0, 16, 16},
+                  kind_data = BoxData{
+                    sprite = StaticSprite{
+                        texture = scene.environment_texture,
+                        dimension = ENV_DIM,
+                        draw_rect = {0, 0, 16, 16},
+                    },
+                  },
+              })
+          }
               
           case 'I':
               AddEntity(scene, Entity{
