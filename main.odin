@@ -30,7 +30,7 @@ main :: proc() {
     // systems.UpdateMusic(&scene)
     
     rl.BeginTextureMode(target_texture)
-      rl.ClearBackground(rl.WHITE)
+      rl.ClearBackground(rl.BLACK)
       systems.DrawScene(scene)
       rl.EndTextureMode()
 
