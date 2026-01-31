@@ -1,11 +1,11 @@
 package systems
 import rl "vendor:raylib"
+import "core:fmt"
 
 DEFAULT_TILE_HEIGHT :: 16
 DEFAULT_TILE_WIDTH :: 16
 
 PositionFromGrid :: proc(scene: ^Scene, grid_x: i32, grid_y: i32) -> rl.Vector2 {
-  // AlNov: @TODO Remove hardcoded tile_size
   result: rl.Vector2
   result.x = f32(grid_x*DEFAULT_TILE_HEIGHT)
   result.y = f32(grid_y*DEFAULT_TILE_WIDTH)
@@ -22,7 +22,6 @@ ChangeTile :: proc(scene: ^Scene, grid_x: i32, grid_y: i32, type: TileType) {
       tile.sprite.draw_rect.x = f32(offset[0])
       tile.sprite.draw_rect.y = f32(offset[1])
       
-      // Update collision
       should_collide := (type == .Stone || type == .Water)
       
       entity.collision = b32(should_collide)
@@ -101,35 +100,100 @@ LoadLevel :: proc(scene: ^Scene, level: Level) {
   }
 }
 
-LoadEntities::proc(scene: ^Scene, level: Level) {
-  // Constants
+// Get button ID for a specific position from level data
+GetButtonIDForPosition :: proc(level: Level, grid_x: i32, grid_y: i32) -> i32 {
+  for mapping in level.button_ids {
+    if mapping.grid_x == grid_x && mapping.grid_y == grid_y {
+      return mapping.button_id
+    }
+  }
+  return -1  // No ID assigned
+}
+
+// Get door connection info for a specific position from level data
+GetDoorConnectionForPosition :: proc(level: Level, grid_x: i32, grid_y: i32) -> ([]i32, bool) {
+  for mapping in level.door_connections {
+    if mapping.grid_x == grid_x && mapping.grid_y == grid_y {
+      return mapping.required_button_ids, true
+    }
+  }
+  return nil, false
+}
+
+LoadEntities :: proc(scene: ^Scene, level: Level) {
   LEGS_OFFSET :: 4
   SHADOW_OFFSET :: 2
   WIDTH_OFFSET :: 4
   SPRITE_DIM :: rl.Vector2{16, 22}
   ENV_DIM :: rl.Vector2{16, 16}
   
-  // Pre-allocate spirit positions array with reasonable capacity
-  spirit_positions := make([dynamic]rl.Vector2, 0, 16)
-  defer delete(spirit_positions)
-  
-  player_grid_pos := rl.Vector2{0, 0}
   data_ptr : [^]u8
   data_ptr = cast([^]u8)level.entities_data
-  
+    
+  // Collision rect calculation
+  collision_y := SPRITE_DIM.y - LEGS_OFFSET - SHADOW_OFFSET
+  collision_rect := rl.Rectangle{
+      x = 0,
+      y = collision_y,
+      width = SPRITE_DIM.x - WIDTH_OFFSET,
+      height = LEGS_OFFSET,
+  }
+
   // Single pass through entity data
   for y in 0..<level.height {
       for x in 0..<level.width {
           data_index := y * level.width + x
           char := data_ptr[data_index]
           
-          switch char {
+        switch char {
           case 'P':
-              player_grid_pos = rl.Vector2{f32(x), f32(y)}
+            // Add player
+            interaction_zone_id := AddEntity(scene, Entity{
+              collision = true,
+              collision_rect = rl.Rectangle{
+                x = 0,
+                y = 0,
+                width = DEFAULT_TILE_HEIGHT,
+                height = DEFAULT_TILE_WIDTH,
+              },
+              kind_data = InteractionZoneData{}
+            })
+            scene.player_id = AddPlayer(scene, Entity{
+                position = PositionFromGrid(scene, x, y),
+                collision = true,
+                collision_rect = collision_rect,
+                kind_data = PlayerData{
+                    velocity = {0, 0},
+                    state = .Idle,
+                    direction = .Down,
+                    sprite = Sprite{
+                        texture = scene.player_texture,
+                        dimension = SPRITE_DIM,
+                        current_frame = 0,
+                        frames_count = 4,
+                        frame_duration = 0.2,
+                    },
+                    interaction_zone = &scene.entities[interaction_zone_id],
+                },
+            })
               
           case 'S':
-              append(&spirit_positions, rl.Vector2{f32(x), f32(y)})
-              
+            // Add enemies
+            AddEnemy(scene, Entity{
+                position = PositionFromGrid(scene, x, y),
+                collision = true,
+                collision_rect = collision_rect,
+                kind_data = EnemyData{
+                    sprite = Sprite{
+                        texture = scene.npc_texture,
+                        dimension = {16, 27},
+                        current_frame = 0,
+                        frames_count = 4,
+                        frame_duration = 0.2,
+                    },
+                },
+            })
+
           case 'T':
               AddEntity(scene, Entity{
                   position = PositionFromGrid(scene, x, y),
@@ -144,7 +208,7 @@ LoadEntities::proc(scene: ^Scene, level: Level) {
                   },
               })
 
-          case 'B': {
+          case 'B':
               AddEntity(scene, Entity{
                   position = PositionFromGrid(scene, x, y),
                   collision = true,
@@ -157,9 +221,11 @@ LoadEntities::proc(scene: ^Scene, level: Level) {
                     },
                   },
               })
-          }
               
           case 'I':
+              // Get the button ID from the level's button_ids mapping
+              button_id := GetButtonIDForPosition(level, x, y)
+              
               AddEntity(scene, Entity{
                   position = PositionFromGrid(scene, x, y),
                   collision = true,
@@ -170,68 +236,87 @@ LoadEntities::proc(scene: ^Scene, level: Level) {
                           dimension = ENV_DIM,
                           draw_rect = {0, 0, 16, 16},
                       },
+                      button_id = button_id
+                  },
+              })
+
+          case 'D':
+              // Get the door connection info from the level's door_connections mapping
+              required_ids, has_connection := GetDoorConnectionForPosition(level, x, y)
+              
+              door_required_ids := make([dynamic]i32)
+              if has_connection {
+                  for req_id in required_ids {
+                      append(&door_required_ids, req_id)
+                  }
+              }
+              
+              AddEntity(scene, Entity{
+                  position = PositionFromGrid(scene, x, y),
+                  collision = true,
+                  collision_rect = {0, 0, 16, 16},
+                  kind_data = DoorData{
+                      sprite = StaticSprite{
+                          texture = scene.environment_texture,
+                          dimension = ENV_DIM,
+                          draw_rect = {0, 0, 16, 16},
+                      },
+                      grid_x = x,
+                      grid_y = y,
+                      is_open = false,
+                      required_button_ids = door_required_ids,
                   },
               })
           }
       }
   }
-  
-  // Collision rect calculation
-  collision_y := SPRITE_DIM.y - LEGS_OFFSET - SHADOW_OFFSET
-  collision_rect := rl.Rectangle{
-      x = 0,
-      y = collision_y,
-      width = SPRITE_DIM.x - WIDTH_OFFSET,
-      height = LEGS_OFFSET,
+}
+
+// Check if all required buttons for a door are pressed
+CheckDoorRequirements :: proc(scene: ^Scene, door: ^DoorData) -> b32 {
+  if len(door.required_button_ids) == 0 {
+    return true  // No requirements means always open
   }
   
-  // Add enemies
-  for pos in spirit_positions {
-      AddEnemy(scene, Entity{
-          position = PositionFromGrid(scene, i32(pos.x), i32(pos.y)),
-          collision = true,
-          collision_rect = collision_rect,
-          kind_data = EnemyData{
-              sprite = Sprite{
-                  texture = scene.npc_texture,
-                  dimension = {16, 27},
-                  current_frame = 0,
-                  frames_count = 4,
-                  frame_duration = 0.2,
-              },
-          },
-      })
+  // Check if all required buttons are pressed
+  for required_id in door.required_button_ids {
+    button_found:b32 = false
+    button_pressed:b32 = false
+    
+    for &entity in scene.entities {
+      if button_data, ok := &entity.kind_data.(ButtonData); ok {
+        if button_data.button_id == required_id {
+          button_found = true
+          button_pressed = button_data.active
+          break
+        }
+      }
+    }
+    
+    if !button_found || !button_pressed {
+      return false
+    }
   }
   
-  // Add player
-  interaction_zone_id := AddEntity(scene, Entity{
-    collision = true,
-    collision_rect = rl.Rectangle{
-      x = 0,
-      y = 0,
-      width = DEFAULT_TILE_HEIGHT,
-      height = DEFAULT_TILE_WIDTH,
-    },
-    kind_data = InteractionZoneData{}
-  })
-  scene.player_id = AddPlayer(scene, Entity{
-      position = PositionFromGrid(scene, i32(player_grid_pos.x), i32(player_grid_pos.y)),
-      collision = true,
-      collision_rect = collision_rect,
-      kind_data = PlayerData{
-          velocity = {0, 0},
-          state = .Idle,
-          direction = .Down,
-          sprite = Sprite{
-              texture = scene.player_texture,
-              dimension = SPRITE_DIM,
-              current_frame = 0,
-              frames_count = 4,
-              frame_duration = 0.2,
-          },
-          interaction_zone = &scene.entities[interaction_zone_id],
-      },
-  })
+  return true
+}
+
+// Update door states based on button presses
+UpdateDoors :: proc(scene: ^Scene) {
+  for &entity in scene.entities {
+    if door_data, ok := &entity.kind_data.(DoorData); ok {
+      all_buttons_pressed:b32 = CheckDoorRequirements(scene, door_data)
+      
+      was_open := door_data.is_open
+      if !door_data.is_open {
+        door_data.is_open = all_buttons_pressed
+      }
+      
+      if !was_open && door_data.is_open {
+        fmt.println("Door at", door_data.grid_x, door_data.grid_y, "opened!")
+      } 
+    }
+  }
 }
 
 SwitchWorld :: proc(scene: ^Scene, level: Level, to_other_world: b32) {
@@ -257,6 +342,13 @@ SwitchWorld :: proc(scene: ^Scene, level: Level, to_other_world: b32) {
 }
 
 RestartLevel :: proc(scene: ^Scene, level: Level) {
+  // Clean up door data before clearing
+  for &entity in scene.entities {
+    if door_data, ok := &entity.kind_data.(DoorData); ok {
+      delete(door_data.required_button_ids)
+    }
+  }
+  
   // Clear existing data
   clear(&scene.entities)
   clear(&scene.tile_grid.tiles)
@@ -275,6 +367,7 @@ RestartLevel :: proc(scene: ^Scene, level: Level) {
   // Reload everything from scratch
   LoadLevel(scene, level)
   LoadEntities(scene, level)
+  SortEntities(scene)
   
   // Reset camera to player position
   if scene.player_id < i32(len(scene.entities)) {
@@ -282,4 +375,3 @@ RestartLevel :: proc(scene: ^Scene, level: Level) {
       scene.camera.position = player.position
   }
 }
-

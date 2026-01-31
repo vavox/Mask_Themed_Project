@@ -10,6 +10,7 @@ EntityKindData :: union {
   BoxData,
   TileData,
   InteractionZoneData,
+  DoorData,
 }
 
 Entity :: struct {
@@ -72,6 +73,7 @@ ButtonData :: struct {
   sprite: StaticSprite,
   pressed: b32,
   active: b32,
+  button_id: i32,  // Assigned based on position from level data
 }
 
 SpiritTrapData :: struct {
@@ -89,6 +91,14 @@ TileData :: struct {
   grid_y: i32,
 }
 
+DoorData :: struct {
+  sprite: StaticSprite,
+  grid_x: i32,
+  grid_y: i32,
+  is_open: b32,
+  required_button_ids: [dynamic]i32,
+}
+
 InteractionZoneData :: struct {
 }
 
@@ -104,6 +114,20 @@ CollisionResult :: struct {
   penetration: rl.Vector2
 }
 
+// Position-based button ID definition
+ButtonIDMapping :: struct {
+  grid_x: i32,
+  grid_y: i32,
+  button_id: i32,
+}
+
+// Position-based door connection definition
+DoorConnectionMapping :: struct {
+  grid_x: i32,
+  grid_y: i32,
+  required_button_ids: []i32,
+}
+
 Scene :: struct {
   entities: [dynamic]Entity,
   width: i32,
@@ -117,7 +141,7 @@ Scene :: struct {
   player_texture: rl.Texture,
   environment_texture: rl.Texture,
   npc_texture: rl.Texture,
-  sounds: Sounds
+  sounds: Sounds,
 }
 
 Camera :: struct {
@@ -147,6 +171,9 @@ Level :: struct {
   data: cstring,
   other_world_data: cstring,
   entities_data: cstring,
+  
+  button_ids: []ButtonIDMapping,
+  door_connections: []DoorConnectionMapping,
 }
 
 PlayerIdleSpriteOffset: [PlayerDirection][2]i32 = {
@@ -171,6 +198,7 @@ TileSpriteOffset: [TileType][2]i32 = {
 }
 
 // G=Grass, W=Water, S=Stone, N=None
+// P=Player, S=Spirit, T=Trap, I=Button, B=Box, D=Door
 TEST_LEVEL :: Level{
   name = "Testland",
   width = 20,
@@ -205,21 +233,31 @@ TEST_LEVEL :: Level{
                      "WWWWWWWWWWWWWWWWWWWW" +
                      "WWWWWWWWWWWWWWWWWWWW" +
                      "WWWWWWWWWWWWWWWWWWWW",
-  // P=Player, S=Spirit, T=Trap, I-Interactable, B=Box
+                     
   entities_data = "--------------------" +
                   "--------------------" +
                   "-S--------------S---" +
                   "--------------------" +
                   "--------------------" +
-                  "---I----------------" +
+                  "---I----------------" +  // Button at (3, 5)
                   "--------------------" +
                   "---P--B---------TT--" +
                   "----------------T---" +
-                  "-----I--------------" +
-                  "--------------------" +
+                  "-----I--------------" +  // Button at (5, 9)
+                  "---D----------------" +  // Door at (3, 10)
                   "--------------------" +
                   "--------------------" +
                   "-----------------S--" +
                   "--------------------",
+  
+  // Define which button is which ID by position
+  button_ids = {
+    {grid_x = 3, grid_y = 5, button_id = 0},  // First button gets ID 0
+    {grid_x = 5, grid_y = 9, button_id = 1},  // Second button gets ID 1
+  },
+  
+  // Define which doors need which buttons by position
+  door_connections = {
+    {grid_x = 3, grid_y = 10, required_button_ids = {0, 1}},  // Door at (3,10) needs buttons 0 and 1
+  },
 }
-

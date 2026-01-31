@@ -2,6 +2,7 @@ package systems
 
 import "core:fmt"
 import "core:math"
+import "core:slice"
 import rl "vendor:raylib"
 
 InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player_texture: rl.Texture, environment_texture: rl.Texture, npc_texture: rl.Texture, level: Level = TEST_LEVEL) {
@@ -21,6 +22,8 @@ InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player
   scene.current_level = level
   scene.camera = InitCamera(scene.width, scene.height, 320, 180)
   LoadEntities(scene, level)
+
+  SortEntities(scene)
 }
 
 UpdateMusic :: proc(scene: ^Scene) {
@@ -107,23 +110,23 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
         }
 
         if kind_data.interaction_zone != nil {
-        switch kind_data.direction {
-          case .Up: {
-            kind_data.interaction_zone.position = entity.position
-          }
+          switch kind_data.direction {
+            case .Up: {
+              kind_data.interaction_zone.position = entity.position
+            }
 
-          case .Down: {
-            kind_data.interaction_zone.position = entity.position + rl.Vector2{0, 23}
-          }
+            case .Down: {
+              kind_data.interaction_zone.position = entity.position + rl.Vector2{0, 23}
+            }
 
-          case .Left: {
-            kind_data.interaction_zone.position = entity.position + rl.Vector2{-16, 8}
-          }
+            case .Left: {
+              kind_data.interaction_zone.position = entity.position + rl.Vector2{-16, 8}
+            }
 
-          case .Right: {
-            kind_data.interaction_zone.position = entity.position + rl.Vector2{16, 8}
+            case .Right: {
+              kind_data.interaction_zone.position = entity.position + rl.Vector2{16, 8}
+            }
           }
-        }
 
         }
       }
@@ -166,169 +169,9 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
 
       case InteractionZoneData: {
       }
-    }
-  }
-}
 
-CollisionDetection :: proc(scene: ^Scene){
-  for a_iter := 0; a_iter < len(scene.entities) - 1; a_iter += 1 {
-    for b_iter := a_iter + 1; b_iter < len(scene.entities); b_iter += 1 {
-      a := &scene.entities[a_iter]
-      b := &scene.entities[b_iter]
-
-      if (!a.collision || !b.collision) do continue
-
-      a_rect := a.collision_rect
-      a_rect.x += a.position.x
-      a_rect.y += a.position.y
-
-      b_rect := b.collision_rect
-      b_rect.x += b.position.x
-      b_rect.y += b.position.y
-      
-      if rl.CheckCollisionRecs(a_rect, b_rect) {
-        collision_result: CollisionResult
-
-        collision_result.a = a
-        collision_result.b = b
-
-        overlap_left := (a_rect.x + a_rect.width) - b_rect.x
-        overlap_right := (b_rect.x + b_rect.width) - a_rect.x
-        overlap_top := (a_rect.y + a_rect.height) - b_rect.y
-        overlap_bottom := (b_rect.y + b_rect.height) - a_rect.y
-        
-        resolve_x := min(overlap_left, overlap_right)
-        resolve_y := min(overlap_top, overlap_bottom)
-
-        if resolve_x < resolve_y {  // horizontal collision
-          if overlap_left < overlap_right {
-            collision_result.penetration.x = -overlap_left
-          }
-          else {
-            collision_result.penetration.x = overlap_right
-          }
-        }
-        else { // vertical collision
-          if overlap_top < overlap_bottom {
-            collision_result.penetration.y = -overlap_top
-          }
-          else {
-            collision_result.penetration.y = overlap_bottom
-          }
-        }
-
-        append(&scene.collisions, collision_result)
-      }
-    }
-  }
-}
-
-SolvePlayerTileCollision :: proc(player, tile: ^Entity, penetration: rl.Vector2) {
-  player.position += penetration
-}
-
-SolvePlayerButtonCollision :: proc(player, button: ^Entity, sounds: Sounds) {
-  if button_data, result := &button.kind_data.(ButtonData); result {
-  button_data.pressed = true
-        // if !rl.IsSoundPlaying(scene.sounds.button_press) {
-          // rl.PlaySound(sounds.button_press)
-        // }
-  }
-}
-
-SolvePlayerBoxCollision :: proc(box, player: ^Entity, penetration: rl.Vector2) {
-  box.position += penetration
-  player.position -= penetration
-}
-
-SolveBoxTileCollision :: proc(box, tile: ^Entity, penetration: rl.Vector2) {
-  box.position += penetration
-}
-
-SolveSpiritTrapCollision :: proc(spirit, trap: ^Entity, sounds: Sounds) {
-  if spirit_data, result := &spirit.kind_data.(EnemyData); result {
-    if !spirit_data.trapped {
-        spirit_data.trapped = true
-        // if !rl.IsSoundPlaying(scene.sounds.trap_trigger) {
-          // rl.PlaySound(sounds.trap_trigger)
-        // }
-    }
-  }
-}
-
-SolveCollision :: proc(scene: ^Scene) {
-  for &collision, iter in scene.collisions {
-    #partial switch &a_kind in collision.a.kind_data {
-      case PlayerData: {
-        #partial switch &b_kind in collision.b.kind_data {
-          case TileData: {
-            SolvePlayerTileCollision(collision.a, collision.b, collision.penetration)
-          }
-
-          case ButtonData: {
-            SolvePlayerButtonCollision(collision.a, collision.b, scene.sounds)
-          }
-
-          case BoxData: {
-            SolvePlayerBoxCollision(collision.b, collision.a, collision.penetration)
-          }
-        }
-      }
-
-      case EnemyData: {
-        #partial switch &b_kind in collision.b.kind_data {
-          case SpiritTrapData: {
-            SolveSpiritTrapCollision(collision.a, collision.b, scene.sounds)
-          }
-        }
-      }
-
-      case ButtonData: {
-        #partial switch &b_kind in collision.b.kind_data {
-          case PlayerData: {
-            SolvePlayerButtonCollision(collision.b, collision.a, scene.sounds)
-          }
-
-          case BoxData: {
-            SolvePlayerButtonCollision(collision.b, collision.a, scene.sounds)
-          }
-        }
-      }
-
-      case SpiritTrapData: {
-        #partial switch &b_kind in collision.b.kind_data {
-          case EnemyData: {
-            SolveSpiritTrapCollision(collision.b, collision.a, scene.sounds)
-          }
-        }
-      }
-
-      case BoxData: {
-        #partial switch &b_kind in collision.b.kind_data {
-          case PlayerData: {
-            SolvePlayerBoxCollision(collision.a, collision.b, collision.penetration)
-          }
-
-          case ButtonData: {
-            SolvePlayerButtonCollision(collision.a, collision.b, scene.sounds)
-          }
-
-          case TileData: {
-            SolveBoxTileCollision(collision.a, collision.b, collision.penetration)
-          }
-        }
-      }
-
-      case TileData: {
-        #partial switch &b_kind in collision.b.kind_data {
-          case PlayerData: {
-            SolvePlayerTileCollision(collision.b, collision.a, -collision.penetration)
-          }
-
-          case BoxData: {
-            SolveBoxTileCollision(collision.b, collision.a, -collision.penetration)
-          }
-        }
+      case DoorData: {
+        UpdateDoors(scene)
       }
     }
   }
@@ -363,7 +206,7 @@ DrawScene :: proc(scene: Scene) {
       }
     }
   }
-
+  
   for entity in scene.entities {
     switch &kind in entity.kind_data {
       case PlayerData: {
@@ -403,16 +246,64 @@ DrawScene :: proc(scene: Scene) {
       }
 
       case BoxData: {
-        rl.DrawRectangleV(entity.position, kind.sprite.dimension, rl.VIOLET)
+        rl.DrawRectangleV(entity.position, kind.sprite.dimension, rl.GRAY)
+      }
+
+      case DoorData: {
+        if kind.is_open {
+          rl.DrawRectangleV(entity.position, kind.sprite.dimension, rl.GREEN)
+        } else {
+          rl.DrawRectangleV(entity.position, kind.sprite.dimension, rl.RED)
+        }
       }
 
       case InteractionZoneData: {
-        rl.DrawRectangleLines(i32(entity.position.x), i32(entity.position.y), i32(entity.collision_rect.width), i32(entity.collision_rect.height), rl.BLUE)
+        // rl.DrawRectangleLines(i32(entity.position.x), i32(entity.position.y), i32(entity.collision_rect.width), i32(entity.collision_rect.height), rl.BLUE)
       }
     }
   }
-  
+
   rl.EndMode2D()
+}
+
+SortEntities :: proc(scene: ^Scene) {
+  slice.sort_by(scene.entities[:], proc(a, b: Entity) -> bool {
+    return GetDrawPriority(a) < GetDrawPriority(b)
+  })
+
+  player_idx := -1
+  zone_idx   := -1
+
+  for entity, i in scene.entities {
+      #partial switch _ in entity.kind_data {
+      case PlayerData:          player_idx = i
+      case InteractionZoneData: zone_idx   = i
+      }
+  }
+
+  if player_idx != -1 && zone_idx != -1 {
+    scene.player_id = i32(player_idx)
+    
+    p_data := &scene.entities[player_idx].kind_data.(PlayerData)
+    
+    p_data.interaction_zone = &scene.entities[zone_idx]
+  }
+}
+
+
+// Drawing order priority
+GetDrawPriority :: proc(entity: Entity) -> int {
+  switch _ in entity.kind_data {
+    case TileData:           return 0
+    case ButtonData:         return 1
+    case SpiritTrapData:     return 2
+    case BoxData:            return 3
+    case DoorData:           return 4
+    case PlayerData:         return 5
+    case EnemyData:          return 6
+    case InteractionZoneData: return 7
+    case:                    return 99
+  }
 }
 
 AddEntity :: proc(scene: ^Scene, entity: Entity) -> i32 {
