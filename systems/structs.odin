@@ -8,6 +8,7 @@ EntityKindData :: union {
   ButtonData,
   SpiritTrapData,
   TileData,
+  InteractionZoneData,
 }
 
 Entity :: struct {
@@ -19,10 +20,14 @@ Entity :: struct {
 
 PlayerState :: enum {
   Idle,
-  MoveUp,
-  MoveDown,
-  MoveRight,
-  MoveLeft,
+  Move,
+}
+
+PlayerDirection :: enum {
+  Up,
+  Down,
+  Left,
+  Right,
 }
 
 TileType :: enum {
@@ -50,8 +55,10 @@ StaticSprite :: struct {
 
 PlayerData :: struct {
   state: PlayerState,
+  direction: PlayerDirection,
   velocity: rl.Vector2,
   sprite: Sprite,
+  interaction_zone: ^Entity,
 }
 
 EnemyData :: struct {
@@ -75,6 +82,9 @@ TileData :: struct {
   sprite: StaticSprite,
   grid_x: i32,
   grid_y: i32,
+}
+
+InteractionZoneData :: struct {
 }
 
 TileGrid :: struct {
@@ -134,12 +144,18 @@ Level :: struct {
   entities_data: cstring,
 }
 
-PlayerStateSpriteOffset: [PlayerState][2]i32 = {
-  .Idle = {1,6},
-  .MoveUp = {0,68},
-  .MoveDown = {1,6},
-  .MoveRight = {1,38},
-  .MoveLeft = {1,102},
+PlayerIdleSpriteOffset: [PlayerDirection][2]i32 = {
+  .Up = {0,68},
+  .Down = {1,6},
+  .Right = {1,38},
+  .Left = {1,102},
+}
+
+PlayerMoveSpriteOffset: [PlayerDirection][2]i32 = {
+  .Up = {0,68},
+  .Down = {1,6},
+  .Right = {1,38},
+  .Left = {1,102},
 }
 
 TileSpriteOffset: [TileType][2]i32 = {

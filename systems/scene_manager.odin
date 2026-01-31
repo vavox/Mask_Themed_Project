@@ -54,19 +54,23 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
         kind_data.state = .Idle
         movement_direction := rl.Vector2{0, 0}
         if rl.IsKeyDown(.W) {
-          kind_data.state = .MoveUp
+          kind_data.state = .Move
+          kind_data.direction = .Up
           movement_direction.y = -1
         }
         if rl.IsKeyDown(.S) {
-          kind_data.state = .MoveDown
+          kind_data.state = .Move
+          kind_data.direction = .Down
           movement_direction.y = 1
         }
         if rl.IsKeyDown(.A) {
-          kind_data.state = .MoveLeft
+          kind_data.state = .Move
+          kind_data.direction = .Left
           movement_direction.x = -1
         }
         if rl.IsKeyDown(.D) {
-          kind_data.state = .MoveRight
+          kind_data.state = .Move
+          kind_data.direction = .Right
           movement_direction.x = 1
         }
         
@@ -76,7 +80,15 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
         entity.position += kind_data.velocity*dt
         entity.position = rl.Vector2Clamp(entity.position, rl.Vector2{0,0}, rl.Vector2{f32(scene.width) - kind_data.sprite.dimension.x, f32(scene.height) - kind_data.sprite.dimension.y})
 
-        kind_data.sprite.offset = PlayerStateSpriteOffset[kind_data.state]
+        switch kind_data.state {
+          case .Idle: {
+            kind_data.sprite.offset = PlayerIdleSpriteOffset[kind_data.direction]
+          }
+          
+          case .Move: {
+            kind_data.sprite.offset = PlayerMoveSpriteOffset[kind_data.direction]
+          }
+        }
 
         if kind_data.state != .Idle {
           AnimateSprite(&kind_data.sprite, dt)
@@ -94,6 +106,27 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
         // Test purposes
         if rl.IsKeyPressed(.R) {
           RestartLevel(scene, TEST_LEVEL)
+        }
+
+        if kind_data.interaction_zone != nil {
+        switch kind_data.direction {
+          case .Up: {
+            kind_data.interaction_zone.position = entity.position
+          }
+
+          case .Down: {
+            kind_data.interaction_zone.position = entity.position + rl.Vector2{0, 23}
+          }
+
+          case .Left: {
+            kind_data.interaction_zone.position = entity.position + rl.Vector2{-16, 8}
+          }
+
+          case .Right: {
+            kind_data.interaction_zone.position = entity.position + rl.Vector2{16, 8}
+          }
+        }
+
         }
       }
 
@@ -128,6 +161,9 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
       }
 
       case TileData: {
+      }
+
+      case InteractionZoneData: {
       }
     }
   }
@@ -326,6 +362,10 @@ DrawScene :: proc(scene: Scene) {
       }
 
       case TileData: {
+      }
+
+      case InteractionZoneData: {
+        rl.DrawRectangleLines(i32(entity.position.x), i32(entity.position.y), i32(entity.collision_rect.width), i32(entity.collision_rect.height), rl.BLUE)
       }
     }
   }

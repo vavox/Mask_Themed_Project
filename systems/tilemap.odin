@@ -189,12 +189,24 @@ LoadEntities::proc(scene: ^Scene, level: Level) {
   }
   
   // Add player
+  interaction_zone_id := AddEntity(scene, Entity{
+    collision = true,
+    collision_rect = rl.Rectangle{
+      x = 0,
+      y = 0,
+      width = DEFAULT_TILE_HEIGHT,
+      height = DEFAULT_TILE_WIDTH,
+    },
+    kind_data = InteractionZoneData{}
+  })
   scene.player_id = AddPlayer(scene, Entity{
       position = PositionFromGrid(scene, i32(player_grid_pos.x), i32(player_grid_pos.y)),
       collision = true,
       collision_rect = collision_rect,
       kind_data = PlayerData{
           velocity = {0, 0},
+          state = .Idle,
+          direction = .Down,
           sprite = Sprite{
               texture = scene.player_texture,
               dimension = SPRITE_DIM,
@@ -202,6 +214,7 @@ LoadEntities::proc(scene: ^Scene, level: Level) {
               frames_count = 4,
               frame_duration = 0.2,
           },
+          interaction_zone = &scene.entities[interaction_zone_id],
       },
   })
 }
