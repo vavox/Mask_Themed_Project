@@ -1,6 +1,7 @@
 package systems
 
 import "core:fmt"
+import "core:time"
 import rl "vendor:raylib"
 
 CollisionDetection :: proc(scene: ^Scene){
@@ -107,6 +108,15 @@ SolveBoxDoorCollision :: proc(box, door: ^Entity, penetration: rl.Vector2) {
   box.position += penetration
 }
 
+SolveSpiritPlayerCollision :: proc(spirit, player: ^Entity, scene: ^Scene) {
+  if spirit_data, result := &spirit.kind_data.(EnemyData); result {
+    fmt.printf("Spirit GOT you\n")
+
+    time.sleep(2 * time.Second)
+    ReloadLevel(scene, scene.current_level)
+  }
+}
+
 SolveSpiritTrapCollision :: proc(spirit, trap: ^Entity, sounds: Sounds) {
   if spirit_data, result := &spirit.kind_data.(EnemyData); result {
     if !spirit_data.trapped {
@@ -138,6 +148,10 @@ SolveCollision :: proc(scene: ^Scene) {
           case BoxData: {
             SolvePlayerBoxCollision(collision.b, collision.a, collision.penetration)
           }
+
+          case EnemyData: {
+            SolveSpiritPlayerCollision(collision.b, collision.a, scene)
+          }
         }
       }
 
@@ -145,6 +159,9 @@ SolveCollision :: proc(scene: ^Scene) {
         #partial switch &b_kind in collision.b.kind_data {
           case SpiritTrapData: {
             SolveSpiritTrapCollision(collision.a, collision.b, scene.sounds)
+          }
+          case PlayerData: {
+            SolveSpiritPlayerCollision(collision.a, collision.b, scene)
           }
         }
       }
