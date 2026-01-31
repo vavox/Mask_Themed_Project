@@ -277,7 +277,7 @@ TEST_LEVEL :: Level{
     {grid_x = 3, grid_y = 10, required_button_ids = {0, 1}},  // Door at (3,10) needs buttons 0 and 1
   },
 
-  // World drawing separation
+  // World drawing separation. If entity has no specifics level mappings at "drawing_world_specifics" than entity presented in both worlds
   drawing_world_specifics = {
     {grid_x = 3, grid_y = 10, world = .Other}
   }

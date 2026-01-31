@@ -120,14 +120,14 @@ GetDoorConnectionForPosition :: proc(level: Level, grid_x: i32, grid_y: i32) -> 
   return nil, false
 }
 
-// Get world to draw in
+// Get entity drawing world
 GetDrawingWorld :: proc(level: Level, grid_x: i32, grid_y: i32) -> World {
   for mapping in level.drawing_world_specifics {
     if mapping.grid_x == grid_x && mapping.grid_y == grid_y {
       return mapping.world
     }
   }
-  return .Both
+  return .Both // if has no specifics level mappings than entity presented in both worlds
 }
 
 LoadEntities :: proc(scene: ^Scene, level: Level) {
