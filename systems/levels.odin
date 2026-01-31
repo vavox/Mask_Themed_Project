@@ -40,6 +40,142 @@ LevelOne :: Level {
     "----------",
 }
 
+LevelTwo :: Level {
+  name = "First Steps",
+  width = 10,
+  height = 10,
+  data = ""+
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW",
+  other_world_data = ""+
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW",
+  entities_data = 
+    "----------" +
+    "----------" +
+    "--------S-" +
+    "-------S--" +
+    "-P-----SD-" +
+    "---------" +
+    "----------" +
+    "----------" +
+    "----------" +
+    "----------",
+}
+
+LevelThree :: Level {
+  name = "First Steps",
+  width = 10,
+  height = 10,
+  data = ""+
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW",
+  other_world_data = ""+
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW",
+  entities_data = 
+    "----------" +
+    "----------" +
+    "----------" +
+    "----------" +
+    "-P------D-" +
+    "----I-----" +
+    "----------" +
+    "----------" +
+    "----------" +
+    "----------",
+    
+    button_ids = {
+        {grid_x = 4, grid_y = 5, button_id = 0},
+    },
+
+    // Define which doors need which buttons by position
+    door_connections = {
+        {grid_x = 8, grid_y = 4, required_button_ids = {0}},  // Door at (3,10) needs buttons 0 and 1
+    },
+}
+
+LevelFour :: Level {
+  name = "First Steps",
+  width = 10,
+  height = 10,
+  data = ""+
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW",
+  other_world_data = ""+
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW",
+  entities_data = 
+    "----------" +
+    "----------" +
+    "----------" +
+    "----------" +
+    "-P--B--ID-" +
+    "----I-----" +
+    "----------" +
+    "----------" +
+    "----------" +
+    "----------",
+    
+    button_ids = {
+        {grid_x = 4, grid_y = 5, button_id = 0},
+        {grid_x = 7, grid_y = 4, button_id = 1},
+    },
+
+    // Define which doors need which buttons by position
+    door_connections = {
+        {grid_x = 8, grid_y = 4, required_button_ids = {0, 1}},  // Door at (3,10) needs buttons 0 and 1
+    },
+}
+
 // G=Grass, W=Water, S=Stone, N=None
 // P=Player, S=Spirit, T=Trap, I=Button, B=Box, D=Door
 TEST_LEVEL :: Level{

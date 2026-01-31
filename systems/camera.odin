@@ -24,8 +24,6 @@ ReloadCameraRect :: proc(camera: ^Camera, scene: ^Scene) {
   camera.view_height = scene.height
   camera.world_width = scene.current_level.width * 16
   camera.world_height = scene.current_level.height * 16
-  camera.position = rl.Vector2{f32(scene.width) / 2, f32(scene.height) / 2}
-  camera.target = rl.Vector2{f32(scene.width) / 2, f32(scene.height) / 2}
 }
 
 UpdateCamera :: proc(camera: ^Camera, player_position: rl.Vector2, dt: f32) {
