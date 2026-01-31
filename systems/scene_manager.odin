@@ -5,7 +5,7 @@ import "core:math"
 import "core:slice"
 import rl "vendor:raylib"
 
-InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player_texture: rl.Texture, environment_texture: rl.Texture, npc_texture: rl.Texture, level: Level = TEST_LEVEL) {
+InitScene :: proc(scene: ^Scene, width: i32, height: i32, tile_size: i32, player_texture: rl.Texture, environment_texture: rl.Texture, npc_texture: rl.Texture, level: Level = LevelOne) {
   grid_width := i32(math.ceil(f32(width)/f32(tile_size)))
   grid_height := i32(math.ceil(f32(height)/f32(tile_size)))
 

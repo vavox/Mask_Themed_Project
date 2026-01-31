@@ -213,6 +213,46 @@ TileSpriteOffset: [TileType][2]i32 = {
   .Stone = {128, 80},
 }
 
+LevelOne :: Level {
+  // --AlNov: @NOTE Simple level to show movement
+  name = "First Steps",
+  width = 10,
+  height = 10,
+  data = ""+
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW",
+  other_world_data = ""+
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WGGGGGGGGW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW" +
+    "WWWWWWWWWW",
+  entities_data = 
+    "----------" +
+    "----------" +
+    "----------" +
+    "----------" +
+    "-P------D-" +
+    "----------" +
+    "----------" +
+    "----------" +
+    "----------" +
+    "----------",
+}
+
 // G=Grass, W=Water, S=Stone, N=None
 // P=Player, S=Spirit, T=Trap, I=Button, B=Box, D=Door
 TEST_LEVEL :: Level{
