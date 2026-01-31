@@ -108,7 +108,7 @@ UpdateScene :: proc(scene: ^Scene, dt: f32) {
 
         // Test purposes
         if rl.IsKeyPressed(.R) {
-          RestartLevel(scene, TEST_LEVEL)
+          RestartLevel(scene, scene.current_level)
         }
 
         if kind_data.interaction_zone != nil {
